@@ -4,6 +4,7 @@ require __DIR__ . '/base.inc.php';
 
 $aMsgs = array(
 	'bonjour',
+	'cédric',
 	'tu veux être mon ami',
 	'd\'accord', 
 	'au revoir',
@@ -16,4 +17,4 @@ foreach($aMsgs as $sMsg) {
 	echo "<= " . $oCompte->getReponse() . "\n";
 }
 
-var_dump($oCompte->getData());
+#var_dump($oCompte->getData());
