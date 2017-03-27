@@ -1,0 +1,5 @@
+<?php
+
+$pathLibXMPP = __DIR__ . '/../xmpphp/';
+$sXMPPUser = 'username';
+$sXMPPPwd = 'password';
