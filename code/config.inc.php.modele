@@ -1,5 +1,9 @@
 <?php
 
-$pathLibXMPP = __DIR__ . '/../xmpphp/';
-$sXMPPUser = 'username';
-$sXMPPPwd = 'password';
+class CConfChatbot
+{
+	const $pathLibXMPP = '/home/cedric/www/e/xmpphp/';
+	const $pathData = '/home/cedric/www/var/botchat_poc/';
+	const $sXMPPUser = 'username';
+	const $sXMPPPwd = 'password';
+}
