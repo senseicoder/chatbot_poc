@@ -78,11 +78,18 @@ class CComptes
 		$aResult = array();	
 		$aQuestionnaires = array(
 			'q1' => array(
+				'lib'=>'quelques questions indiscrêtes',
+				'questions'=>array(
+					'êtes-vous homme, femme, indifférencié, un cas complexe ?',
+					'êtes-vous humain, robot, alien ?',
+				),
+			),
+			'q2' => array(
 				'lib'=>'préférences gustatives savoyardes',
 				'questions'=>array(
 					'aimez-vous la fondue ?',
 					'aimez-vous la raclette ?',
-					'aimez-vous le farcement ?'
+					'aimez-vous le farcement ?',
 				),
 			),
 		);
@@ -110,6 +117,7 @@ class CComptes
 				break;
 
 			case self::ATTENTE_QUESTIONS:
+				$this->_aData['quest_current'] = NULL;
 				foreach($aQuestionnaires as $idQuest => $aQuest) {
 					$sLib = $aQuest['lib'];
 					if( ! isset($this->_aData['quest'][$idQuest])) {
@@ -119,11 +127,13 @@ class CComptes
 						$this->_aData['quest'][$idQuest] = array('decision' => NULL, 'decision_boucles' => 0);
 						$aResult[] = 'Voulez-vous participer à une étude : ' . $sLib . ' ?';
 						$bBreakWaitAnswer = TRUE;
+						break;
 					}
 				}
 				if(empty($this->_aData['quest_current'])) {
 					$this->_aData['state'] = self::ATTENTE_RIEN;
-					$aResult['Plus aucune question à vous poser.'];
+					$aResult[] = 'Plus aucune question à vous poser.';
+					$bBreakWaitAnswer = TRUE;
 				}
 				break;
 
@@ -166,11 +176,15 @@ class CComptes
 				$idQuest = $this->_aData['quest_current'];
 				if( ! empty($sMsg)) {
 					$idQuestion = $this->_aData['quest'][$idQuest]['prochainequestion'];
-					$this->_aData['quest'][$idQuest]['reponses'][$idQuest] = $sMsg;
+					$this->_aData['quest'][$idQuest]['reponses'][$idQuestion] = trim($sMsg);
 					$this->_aData['quest'][$idQuest]['prochainequestion']++;
-					if($this->_aData['quest'][$idQuest]['prochainequestion'] > count($aQuestionnaires[$idQuest])) {
+					if($this->_aData['quest'][$idQuest]['prochainequestion'] >= count($aQuestionnaires[$idQuest]['questions'])) {
 						$aResult[] = 'Merci pour vos réponses, fin du questionnaire.';
-						#TODO donner un recapitulatif
+						$aResult[] = 'Voici vos réponses : ';
+						foreach($aQuestionnaires[$idQuest]['questions'] as $idQuestion => $libQuestion) {
+							$aResult[] = "$libQuestion : " . $this->_aData['quest'][$idQuest]['reponses'][$idQuestion];
+						}
+						
 						$this->_aData['state'] = self::ATTENTE_QUESTIONS;
 					}
 					else {
