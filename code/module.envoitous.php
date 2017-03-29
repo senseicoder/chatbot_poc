@@ -14,7 +14,7 @@ try {
     $conn->presence();
     foreach(CComptes::Liste() as $oCompte) {
     	$aData = $oCompte->getData();
-    	$conn->message($aData['from'], 'Bonjour '.$aData['nom'].'. Une nouvelle enquête est disponible, merci de répondre pour commencer à répondre.');
+    	$conn->message($aData['from'], 'Bonjour '.$aData['nom'].'. Une nouvelle enquête est disponible, merci de répondre pour commencer saisir vos réponses.');
     }
     $conn->disconnect();
 } catch(XMPPHP_Exception $e) {
