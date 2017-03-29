@@ -1,9 +1,15 @@
 <?php
+#TODO passer le retour en array, pouvoir avoir plusieurs messages
+#TODO réorganiser le code pour enchainer les switch et découper, mettre les choix dans des données
 
 class CComptes
 {
 	const ATTENTE_RIEN = 'ATTENTE_RIEN';
 	const ATTENTE_NOM = 'ATTENTE_NOM';
+	const ATTENTE_ACCORD_QUEST = 'ATTENTE_ACCORD_QUEST';
+	const ATTENTE_QUESTIONS = 'ATTENTE_QUESTIONS';
+	const ATTENTE_POSE_QUESTION = 'ATTENTE_POSE_QUESTION';
+	const ATTENTE_REPONSE_QUESTION = 'ATTENTE_REPONSE_QUESTION';
 
 	const NOM_INCONNU = 'inconnu(e)';
 
@@ -39,6 +45,11 @@ class CComptes
 		return FALSE;
 	}
 
+	function _log($sMsg)
+	{
+		echo "### $sMsg\n";
+	}
+
 	function __construct($sFrom)
 	{
 		$pathFileData = $this->_getPathFileData($sFrom);
@@ -61,34 +72,138 @@ class CComptes
 	{
 		$this->_aData['historique'][] = $sMsg;
 	}
+
+	protected function _AnalyseReponse(& $bBreakWaitAnswer)
+	{
+		$aResult = array();	
+		$aQuestionnaires = array(
+			'q1' => array(
+				'lib'=>'préférences gustatives savoyardes',
+				'questions'=>array(
+					'aimez-vous la fondue ?',
+					'aimez-vous la raclette ?',
+					'aimez-vous le farcement ?'
+				),
+			),
+		);
+		$sMsg = $this->_getLastMsg();
+
+		$this->_log('state ' . $this->_aData['state']);
+		switch($this->_aData['state']) {
+
+			case self::ATTENTE_RIEN: 
+				if($this->_aData['nom'] === self::NOM_INCONNU) {
+					$this->_aData['state'] = self::ATTENTE_NOM;
+					$aResult[] = 'bonjour, quel est votre nom ?';
+					$bBreakWaitAnswer = TRUE;
+				}
+				else {
+					$this->_aData['state'] = self::ATTENTE_QUESTIONS;
+					$aResult[] = 'bonjour, ' . $this->_aData['nom'] . '.'; 	
+				}
+				break;
+
+			case self::ATTENTE_NOM: 
+				$this->_aData['nom'] = $sMsg;
+				$this->_aData['state'] = self::ATTENTE_QUESTIONS;
+				$aResult[] = 'bonjour, ' . $this->_aData['nom'] . '.'; 	
+				break;
+
+			case self::ATTENTE_QUESTIONS:
+				foreach($aQuestionnaires as $idQuest => $aQuest) {
+					$sLib = $aQuest['lib'];
+					if( ! isset($this->_aData['quest'][$idQuest])) {
+						$this->_log("proposition questionnaire $idQuest / $sLib");
+						$this->_aData['state'] = self::ATTENTE_ACCORD_QUEST;
+						$this->_aData['quest_current'] = $idQuest;
+						$this->_aData['quest'][$idQuest] = array('decision' => NULL, 'decision_boucles' => 0);
+						$aResult[] = 'Voulez-vous participer à une étude : ' . $sLib . ' ?';
+						$bBreakWaitAnswer = TRUE;
+					}
+				}
+				if(empty($this->_aData['quest_current'])) {
+					$this->_aData['state'] = self::ATTENTE_RIEN;
+					$aResult['Plus aucune question à vous poser.'];
+				}
+				break;
+
+			case self::ATTENTE_ACCORD_QUEST:
+				$idQuest = $this->_aData['quest_current'];
+				if($this->_LastMsgContains('oui')) {
+					$this->_aData['quest'][$idQuest]['decision'] = TRUE;
+					$this->_aData['quest'][$idQuest]['prochainequestion'] = 0;
+					$this->_aData['state'] = self::ATTENTE_POSE_QUESTION;
+					$aResult[] = 'Parfait ! Allons-y.';
+				}
+				elseif($this->_LastMsgContains('non')) {
+					$this->_aData['quest'][$idQuest]['decision'] = FALSE;
+					$this->_aData['state'] = self::ATTENTE_QUESTIONS;
+					$aResult[] = 'Dommage ! Une prochaine peut être.';
+				}
+				elseif($this->_aData['quest'][$idQuest]['decision_boucles'] > 10) {
+					$aResult[] = 'J\'abandonne.';
+					$this->_aData['quest'][$idQuest]['decision'] = FALSE;
+					$this->_aData['state'] = self::ATTENTE_QUESTIONS;
+				}
+				else {
+					$this->_aData['quest'][$idQuest]['decision_boucles']++;
+					$aResult[] = 'Je n\'ai pas compris.';
+					$aResult[] = 'Veuillez répondre par oui ou non.';
+					$bBreakWaitAnswer = TRUE;
+				}
+				break;
+
+			case self::ATTENTE_POSE_QUESTION:
+				$idQuestion = $this->_aData['quest'][$idQuest]['prochainequestion'];
+				$aResult[] = "question : $idQuestion" . $aQuestionnaires[$idQuest][$idQuestion];
+				$this->_aData['state'] = self::ATTENTE_REPONSE_QUESTION;
+				$bBreakWaitAnswer = TRUE;
+				break;
+
+			case self::ATTENTE_REPONSE_QUESTION:
+				if( ! empty($sMsg)) {
+					$idQuestion = $this->_aData['quest'][$idQuest]['prochainequestion'];
+					$this->_aData['quest'][$idQuest]['reponses'][$idQuest]
+					$this->_aData['quest'][$idQuest]['prochainequestion']++;
+					if($this->_aData['quest'][$idQuest]['prochainequestion'] >= count($this->_aData['quest'][$idQuest]['questions'])) {
+
+					}
+					else {
+
+					}
+				$aResult[] = "question : $idQuestion" . $this->_aData['quest'][$idQuest]['questions'][$idQuest];
+				$this->_aData['state'] = self::ATTENTE_REPONSE_QUESTION;
+
+				}
+				else {
+					$bBreakWaitAnswer = TRUE;
+				}
+				break;
+
+			default: die('mode inconnu : ' . $this->_aData['state']);
+		}
+		return $aResult;
+	}
 		
 	function getReponse()
 	{
-		$sMsg = $this->_getLastMsg();
-		if($this->_LastMsgContains('bonjour')) {
-			if($this->_aData['nom'] === self::NOM_INCONNU) {
-				$this->_aData['state'] = self::ATTENTE_NOM;
-				return 'bonjour, quel est votre nom ?';
-			}
-			else {
-				$this->_aData['state'] = self::ATTENTE_PARTICIPER;
-				return 'bonjour, ' . $this->_aData['nom'] . '. Voulez-vous participer à une étude ?'; 	
-			}
+		$aResultGlobal = array();
+
+		$bPrevEmpty = FALSE;
+		$bGoOn = TRUE;
+		$bBreakWaitAnswer = FALSE;
+		while($bGoOn &&  ! $bBreakWaitAnswer) {
+			#$bBreakWaitAnswer = FALSE;
+			$aResult = $this->_AnalyseReponse($bBreakWaitAnswer);
+			$this->_log('result : ' . implode(' / ', $aResult));
+			$aResultGlobal = array_merge($aResultGlobal, $aResult);
+			$bGoOn = ! empty($aResult) || ! $bPrevEmpty;
+			$bPrevEmpty = empty($aResult);
 		}
-		elseif($this->_aData['state'] === self::ATTENTE_NOM) {
-			$this->_aData['nom'] = $sMsg;
-			$this->_aData['state'] = self::ATTENTE_PARTICIPER;
-			return 'bonjour, ' . $this->_aData['nom'] . '. Voulez-vous participer à une étude ?'; 	
-		}
-		elseif($this->_aData['state'] === self::ATTENTE_PARTICIPER) {
-			if($this->_LastMsgContains('oui')) {
-				#TODO ici poser la première question
-				#TODO passer le retour en array, pouvoir avoir plusieurs messages
-				#TODO réorganiser le code pour enchainer les switch et découper, mettre les choix dans des données
-				$this->_aData['etude1']['prochainequestion'] = 2;
-				return 'parfait ! '
-			}
-		else return 'undefined (yet)';
+
+		if(empty($aResultGlobal)) $aResultGlobal[] = 'Je ne sais pas quoi répondre ou dire.';
+
+		return $aResultGlobal;
 	}
 
 	function getData()

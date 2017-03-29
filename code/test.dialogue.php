@@ -5,16 +5,18 @@ require __DIR__ . '/base.inc.php';
 $aMsgs = array(
 	'bonjour',
 	'cédric',
-	'tu veux être mon ami',
+	'je ne sais pas',
 	'd\'accord', 
-	'au revoir',
+	'oui',
 );
 
 $oCompte = new CComptes('testsmanuels');
 foreach($aMsgs as $sMsg) {
 	echo "=> $sMsg\n";
 	$oCompte->setMessage($sMsg);
-	echo "<= " . $oCompte->getReponse() . "\n";
+	foreach($oCompte->getReponse() as $s) {
+		echo "<= $s\n";
+	}
 }
 
 #var_dump($oCompte->getData());
