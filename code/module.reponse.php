@@ -6,7 +6,7 @@ include 'XMPPHP/XMPP.php';
 
 #Use XMPPHP_Log::LEVEL_VERBOSE to get more logging for error reports
 #If this doesn't work, are you running 64-bit PHP with < 5.2.6?
-$conn = new XMPPHP_XMPP('talk.google.com', 5222, $sXMPPUser, $sXMPPPwd, 'xmpphp', 'gmail.com', $printlog=true, $loglevel=XMPPHP_Log::LEVEL_INFO);
+$conn = new XMPPHP_XMPP('talk.google.com', 5222, CConfChatbot::sXMPPUser, CConfChatbot::sXMPPPwd, 'xmpphp', 'gmail.com', $printlog=true, $loglevel=XMPPHP_Log::LEVEL_INFO);
 $conn->autoSubscribe();
 
 $vcard_request = array();
@@ -25,9 +25,15 @@ try {
 	    				if( ! empty($pl['subject'])) print "Subject: {$pl['subject']}\n";
 	    				print "body: ". $pl['body'] . "\n";
 	    				print "type: ". $pl['type'] . "\n";
-	    				var_dump($pl);
+	    				#var_dump($pl);
 	    				print "---------------------------------------------------------------------------------\n";
-	    				$conn->message($pl['from'], $body="echo: \"{$pl['body']}\"", $type=$pl['type']);
+	    				#$conn->message($pl['from'], $body="echo: \"{$pl['body']}\"", $type=$pl['type']);
+	    				if(strstr($pl['from'], '/')) {
+	    					list($sDestinataire,) = explode('/', $pl['from']);
+	    				}
+	    				else {
+	    					$sDestinataire = $pl['from'];
+	    				}
 						$cmd = explode(' ', $pl['body']);
 						
 						switch($cmd[0]) {
@@ -41,10 +47,14 @@ try {
 								$conn->getVCard($cmd[1]);
 								break;
 							default: 
-								$oCompte = new CComptes($pl['from']);
+								$oCompte = new CComptes($sDestinataire);
 								$oCompte->setMessage($pl['body']);
-								$s = $oCompte->getReponse();
-								if( ! empty($s)) $conn->send($s);
+								$aReponses = $oCompte->getReponse();
+								foreach($aReponses as $s) {
+									$conn->message($sDestinataire, $s, $type=$pl['type']);
+									sleep(1);
+								}
+								unset($oCompte);
 						}
 					}
     			break;

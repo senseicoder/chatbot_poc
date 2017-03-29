@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(E_ALL & ~E_DEPRECATED);
+
 require __DIR__ . '/config.inc.php';
 require __DIR__ . '/comptes.inc.php';
 
