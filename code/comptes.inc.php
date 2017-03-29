@@ -15,6 +15,15 @@ class CComptes
 
 	protected $_aData = NULL;
 
+	static function Liste()
+	{
+		$aResult = array();
+		foreach(glob(CConfChatbot::pathData . '/*') as $sFichier) {
+			$aResult[] = new CComptes($sFichier);
+		}
+		return $aResult;
+	}
+
 	protected function _getPathFileData($sFrom)
 	{
 		return CConfChatbot::pathData . '/' . sha1($sFrom);
@@ -52,7 +61,12 @@ class CComptes
 
 	function __construct($sFrom)
 	{
-		$pathFileData = $this->_getPathFileData($sFrom);
+		if(is_file($sFrom)) {
+			$pathFileData = $sFrom;
+		}
+		else {
+			$pathFileData = $this->_getPathFileData($sFrom);
+		}
 		if( ! file_exists($pathFileData)) {
 			$this->_initData($sFrom);
 		}
@@ -90,6 +104,14 @@ class CComptes
 					'aimez-vous la fondue ?',
 					'aimez-vous la raclette ?',
 					'aimez-vous le farcement ?',
+				),
+			),
+			'q3' => array(
+				'lib'=>'préférences personnelles',
+				'questions'=>array(
+					'quelle est votre couleur préférée ?',
+					'quelle est votre musicien ou chanteur préféré ?',
+					'quel est votre collègue préféré(e) ?',
 				),
 			),
 		);
@@ -148,7 +170,7 @@ class CComptes
 				elseif($this->_LastMsgContains('non')) {
 					$this->_aData['quest'][$idQuest]['decision'] = FALSE;
 					$this->_aData['state'] = self::ATTENTE_QUESTIONS;
-					$aResult[] = 'Dommage ! Une prochaine peut être.';
+					$aResult[] = 'Dommage ! Une prochaine fois peut être.';
 				}
 				elseif($this->_aData['quest'][$idQuest]['decision_boucles'] > 10) {
 					$aResult[] = 'J\'abandonne.';
