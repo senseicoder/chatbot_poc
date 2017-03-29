@@ -154,26 +154,28 @@ class CComptes
 				break;
 
 			case self::ATTENTE_POSE_QUESTION:
+				$idQuest = $this->_aData['quest_current'];
 				$idQuestion = $this->_aData['quest'][$idQuest]['prochainequestion'];
-				$aResult[] = "question : $idQuestion" . $aQuestionnaires[$idQuest][$idQuestion];
+				$numQuestion = $idQuestion + 1;
+				$aResult[] = "question $numQuestion : " . $aQuestionnaires[$idQuest]['questions'][$idQuestion];
 				$this->_aData['state'] = self::ATTENTE_REPONSE_QUESTION;
 				$bBreakWaitAnswer = TRUE;
 				break;
 
 			case self::ATTENTE_REPONSE_QUESTION:
+				$idQuest = $this->_aData['quest_current'];
 				if( ! empty($sMsg)) {
 					$idQuestion = $this->_aData['quest'][$idQuest]['prochainequestion'];
-					$this->_aData['quest'][$idQuest]['reponses'][$idQuest]
+					$this->_aData['quest'][$idQuest]['reponses'][$idQuest] = $sMsg;
 					$this->_aData['quest'][$idQuest]['prochainequestion']++;
-					if($this->_aData['quest'][$idQuest]['prochainequestion'] >= count($this->_aData['quest'][$idQuest]['questions'])) {
-
+					if($this->_aData['quest'][$idQuest]['prochainequestion'] > count($aQuestionnaires[$idQuest])) {
+						$aResult[] = 'Merci pour vos réponses, fin du questionnaire.';
+						#TODO donner un recapitulatif
+						$this->_aData['state'] = self::ATTENTE_QUESTIONS;
 					}
 					else {
-
+						$this->_aData['state'] = self::ATTENTE_POSE_QUESTION;
 					}
-				$aResult[] = "question : $idQuestion" . $this->_aData['quest'][$idQuest]['questions'][$idQuest];
-				$this->_aData['state'] = self::ATTENTE_REPONSE_QUESTION;
-
 				}
 				else {
 					$bBreakWaitAnswer = TRUE;

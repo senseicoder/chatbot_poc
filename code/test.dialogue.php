@@ -8,6 +8,9 @@ $aMsgs = array(
 	'je ne sais pas',
 	'd\'accord', 
 	'oui',
+	'beaucoup',
+	'énormément',
+	'un délice',
 );
 
 $oCompte = new CComptes('testsmanuels');
